@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<title>star111119 免服务器上传</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f5f5f5;display:flex;justify-content:center;align-items:center;height:100vh}
+  .box{background:#fff;padding:40px 60px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);text-align:center}
+  input[type=file]{display:none}
+  label{display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;border-radius:4px;cursor:pointer}
+  label:hover{background:#1e40af}
+  #msg{margin-top:15px;font-size:14px;color:#333}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>star111119 文件上传</h1>
+  <p>选择文件后会自动上传到 GitHub 仓库</p>
+  <input type="file" id="file" accept="*/*"/>
+  <label for="file">选择文件</label>
+  <div id="msg"></div>
+</div>
+
+<script>
+/* ========== 已替你填好 ========== */
+const OWNER = 'star111119';
+const REPO  = 'star111119.github.io';
+const BRANCH= 'main';
+const PATH  = 'uploads/';   // 文件将出现在仓库根目录的 uploads/ 里
+/* ================================ */
+
+const fileInput = document.getElementById('file');
+const msgBox    = document.getElementById('msg');
+
+fileInput.addEventListener('change', async () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  msgBox.textContent = '正在上传…';
+
+  const base64 = await new Promise(r => {
+    const reader = new FileReader();
+    reader.onload = e => r(e.target.result.split(',')[1]);
+    reader.readAsDataURL(file);
+  });
+
+  const token = prompt('请输入你的 GitHub Personal Access Token（仅 repo 权限）');
+  if (!token) { msgBox.textContent = '已取消'; return; }
+
+  const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}${file.name}`;
+  const body = {
+    message: `upload ${file.name} via web`,
+    content: base64,
+    branch: BRANCH
+  };
+
+  const res = await fetch(api, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (res.ok) {
+    msgBox.innerHTML = `<span style="color:green">✅ 上传成功！</span><br>
+                        <a href="https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${PATH}${file.name}" target="_blank">去仓库查看</a>`;
+  } else {
+    const err = await res.json();
+    msgBox.innerHTML = `<span style="color:red">❌ 失败：${err.message}</span>`;
+  }
+});
+</script>
+</body>
+</html>
