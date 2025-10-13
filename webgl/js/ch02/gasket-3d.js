@@ -1,5 +1,4 @@
 "use strict";
-const { vec3 } = glMatrix;
 
 var gl, canvas;
 var points = [];
