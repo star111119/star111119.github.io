@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>WebGL Sierpinski Gasket (glMatrix 0.9.5)</title>
+  <title>Sierpinski Gasket – glMatrix 0.9.5 本地版</title>
   <style>
     body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#fafafa;display:flex;flex-direction:column;align-items:center;padding-top:30px;}
     canvas{border:1px solid #ccc;background:#fff;}
@@ -12,10 +12,11 @@
     button{padding:5px 12px;font-size:14px;}
   </style>
 
-  <!-- 0.9.5 核心库 -->
+  <!-- 本地已有库 -->
   <script src="../js/common/glMatrix-0.9.5.min.js"></script>
   <script src="../js/common/webgl-utils.js"></script>
   <script src="../js/common/initShaders.js"></script>
+  <script src="../js/ch02/gasket-triangles.js"></script>
 
   <script id="vertex-shader" type="x-shader/x-vertex">
     attribute vec4 vPosition;
@@ -30,12 +31,10 @@
       gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
   </script>
-
-  <script src="../js/ch02/gasket-triangles.js"></script>
 </head>
 
 <body>
-  <h2>Sierpinski Gasket in 2D（glMatrix 0.9.5）</h2>
+  <h2>Sierpinski Gasket（glMatrix 0.9.5 本地版）</h2>
   <canvas id="gl-canvas" width="512" height="512"></canvas>
 
   <div class="ctrl">
@@ -46,20 +45,20 @@
   </div>
 
   <script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const canvas     = document.getElementById('gl-canvas');
-    const levelInput = document.getElementById('level');
-    const redrawBtn  = document.getElementById('redraw');
+    window.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('gl-canvas');
+      const levelInput = document.getElementById('level');
+      const redrawBtn = document.getElementById('redraw');
 
-    window.refreshGasket = () => {
-      const n = Math.max(0, Math.min(7, parseInt(levelInput.value, 10) || 0));
-      levelInput.value = n;
-      initGasket(canvas, n);
-    };
+      window.refreshGasket = () => {
+        const n = Math.max(0, Math.min(7, parseInt(levelInput.value, 10) || 0));
+        levelInput.value = n;
+        initGasket(canvas, n);
+      };
 
-    redrawBtn.addEventListener('click', window.refreshGasket);
-    window.refreshGasket();
-  });
+      redrawBtn.addEventListener('click', window.refreshGasket);
+      window.refreshGasket();
+    });
   </script>
 </body>
 </html>
