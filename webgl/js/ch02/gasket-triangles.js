@@ -1,15 +1,14 @@
 "use strict";
 
-var canvas, gl;
+var gl;
 var points = [];
 
-// 主入口：由 gasket.html 调用
-function initGasket(numTimesToSubdivide) {
-  canvas = document.getElementById("gl-canvas");
+// 不再自己找 canvas，由 html 调用时把 canvas 当参数传进来
+function initGasket(canvas, numTimesToSubdivide) {
   gl = canvas.getContext("webgl2");
   if (!gl) { alert("WebGL 2.0 不可用"); return; }
 
-  points = []; // 清空历史顶点
+  points = [];
 
   const vertices = [-1, -1, 0,  0, 1, 0,  1, -1, 0];
   const u = vec3.fromValues(vertices[0], vertices[1], vertices[2]);
@@ -18,7 +17,6 @@ function initGasket(numTimesToSubdivide) {
 
   divideTriangle(u, v, w, numTimesToSubdivide);
 
-  // WebGL 初始化
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
@@ -50,11 +48,6 @@ function divideTriangle(a, b, c, count) {
   divideTriangle(a, ab, ca, count);
   divideTriangle(b, bc, ab, count);
   divideTriangle(c, ca, bc, count);
-}
-
-function render() {
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.TRIANGLES, 0, points.length / 3);
 }
 
 function render() {
