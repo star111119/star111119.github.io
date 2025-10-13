@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>WebGL Sierpinski Gasket 3D</title>
+  <title>3D Sierpinski Gasket（glMatrix 0.9.5 本地版）</title>
   <style>
     body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#fafafa;display:flex;flex-direction:column;align-items:center;padding-top:30px;}
     canvas{border:1px solid #ccc;background:#fff;}
@@ -12,59 +12,57 @@
     button{padding:5px 12px;font-size:14px;}
   </style>
 
-  <!-- Shader -->
-  <script id="vertex-shader" type="x-shader/x-vertex">#version 300 es
-in vec3 vPosition;
-in vec4 aColor;
-out vec4 vColor;
-void main(){
-  gl_Position = vec4(vPosition, 1.0);
-  vColor = aColor;
-}
-  </script>
-  <script id="fragment-shader" type="x-shader/x-fragment">#version 300 es
-precision mediump float;
-in vec4 vColor;
-out vec4 fColor;
-void main(){
-  fColor = vColor;
-}
-  </script>
-
-  <!-- 公共库 -->
+  <!-- 只使用你已有的文件，文件名一字不改 -->
+  <script src="../js/common/glMatrix-0.9.5.min.js"></script>
   <script src="../js/common/webgl-utils.js"></script>
   <script src="../js/common/initShaders.js"></script>
-  <script src="../js/common/glMatrix-0.9.5.min.js"></script>
-
-  <!-- 3D 逻辑脚本（见下一节） -->
   <script src="../js/ch02/gasket-3d.js"></script>
+
+  <script id="vertex-shader" type="x-shader/x-vertex">
+    attribute vec4 vPosition;
+    attribute vec4 aColor;
+    varying   vec4 vColor;
+    void main(){
+      gl_Position = vPosition;
+      vColor      = aColor;
+    }
+  </script>
+
+  <script id="fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+    varying vec4 vColor;
+    void main(){
+      gl_FragColor = vColor;
+    }
+  </script>
 </head>
 
 <body>
-  <h2>Sierpinski Gasket in 3D</h2>
+  <h2>3D Sierpinski Gasket（glMatrix 0.9.5 本地版）</h2>
   <canvas id="gl-canvas" width="512" height="512"></canvas>
 
   <div class="ctrl">
     <label>递归深度：
-      <input id="level" type="number" min="0" max="7" value="3">
+      <input id="level" type="number" min="0" max="5" value="3">
     </label>
     <button id="redraw">重绘</button>
   </div>
 
   <script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const levelInput = document.getElementById('level');
-    const redrawBtn  = document.getElementById('redraw');
+    window.addEventListener('DOMContentLoaded', () => {
+      const canvas     = document.getElementById('gl-canvas');
+      const levelInput = document.getElementById('level');
+      const redrawBtn  = document.getElementById('redraw');
 
-    window.refreshGasket3D = () => {
-      const n = Math.max(0, Math.min(7, parseInt(levelInput.value, 10) || 0));
-      levelInput.value = n;
-      initGasket3D(n);   // 下面 JS 实现
-    };
+      window.refreshGasket3D = () => {
+        const n = Math.max(0, Math.min(5, parseInt(levelInput.value, 10) || 0));
+        levelInput.value = n;
+        initGasket3D(n);
+      };
 
-    redrawBtn.addEventListener('click', window.refreshGasket3D);
-    window.refreshGasket3D();   // 首次绘制
-  });
+      redrawBtn.addEventListener('click', window.refreshGasket3D);
+      window.refreshGasket3D();
+    });
   </script>
 </body>
 </html>
