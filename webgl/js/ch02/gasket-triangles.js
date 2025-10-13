@@ -11,10 +11,11 @@ function initGasket(numTimesToSubdivide) {
 
   points = []; // 清空历史顶点
 
+  // 旧版 glMatrix 0.9.5 没有 fromValues，用 create([x,y,z])
   const vertices = [-1, -1, 0,  0, 1, 0,  1, -1, 0];
-  const u = vec3.fromValues(vertices[0], vertices[1], vertices[2]);
-  const v = vec3.fromValues(vertices[3], vertices[4], vertices[5]);
-  const w = vec3.fromValues(vertices[6], vertices[7], vertices[8]);
+  const u = vec3.create([vertices[0], vertices[1], vertices[2]]);
+  const v = vec3.create([vertices[3], vertices[4], vertices[5]]);
+  const w = vec3.create([vertices[6], vertices[7], vertices[8]]);
 
   divideTriangle(u, v, w, numTimesToSubdivide);
 
