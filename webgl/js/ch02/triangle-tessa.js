@@ -3,41 +3,57 @@
 var gl, canvas;
 var points = [];
 
-/* 外部入口：level=0-7, angle=整体旋转°, twistOn=是否扭曲, twistDegree=扭曲强度° */
+/* 手工替代 0.9.5 缺少的 API */
+function vec3FromValues(x, y, z) {
+  return vec3.create([x, y, z]);
+}
+function vec3Lerp(out, a, b, t) {
+  for (var i = 0; i < 3; ++i) out[i] = a[i] + t * (b[i] - a[i]);
+}
+function vec3RotateZ(out, a, center, rad) {
+  var x = a[0] - center[0],
+      y = a[1] - center[1];
+  var c = Math.cos(rad),
+      s = Math.sin(rad);
+  out[0] = x * c - y * s + center[0];
+  out[1] = x * s + y * c + center[1];
+  out[2] = a[2];
+}
+
+/* ---- 主入口 ---- */
 function initTessa(level, angle, twistOn, twistDegree) {
   canvas = document.getElementById("gl-canvas");
-  gl = canvas.getContext("webgl2");
-  if (!gl) { alert("WebGL 2.0 不可用"); return; }
+  gl = WebGLUtils.setupWebGL(canvas);
+  if (!gl) { alert("WebGL 不可用"); return; }
 
   points = [];
-  const radius = 1.0;
-  const rad = Math.PI / 180;
+  var radius = 1.0;
+  var rad = Math.PI / 180;
 
-  // 初始等边三角形
-  const vertices = [
+  /* 初始等边三角形 */
+  var vertices = [
     radius * Math.cos(90 * rad),  radius * Math.sin(90 * rad),  0,
     radius * Math.cos(210 * rad), radius * Math.sin(210 * rad), 0,
     radius * Math.cos(-30 * rad), radius * Math.sin(-30 * rad), 0
   ];
-  const a = vec3.fromValues(vertices[0], vertices[1], vertices[2]);
-  const b = vec3.fromValues(vertices[3], vertices[4], vertices[5]);
-  const c = vec3.fromValues(vertices[6], vertices[7], vertices[8]);
+  var a = vec3FromValues(vertices[0], vertices[1], vertices[2]);
+  var b = vec3FromValues(vertices[3], vertices[4], vertices[5]);
+  var c = vec3FromValues(vertices[6], vertices[7], vertices[8]);
 
   divideTriangle(a, b, c, level, angle, twistOn, twistDegree);
 
-  // ******* 首次初始化：程序 + attribute 位置 *******
+  /* 只初始化一次 WebGL 相关资源 */
   if (!initTessa.program) {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(1, 1, 1, 1);
-    initTessa.program = initShaders(gl, "vertex-shader", "fragment-shader");
+    initTessa.program   = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(initTessa.program);
     initTessa.vPosition = gl.getAttribLocation(initTessa.program, "vPosition");
     gl.enableVertexAttribArray(initTessa.vPosition);
-
-    initTessa.vBuffer = gl.createBuffer(); // 只创建一次
+    initTessa.vBuffer   = gl.createBuffer();
   }
 
-  // ******* 每次数据更新后：上传 + 指定指针 *******
+  /* 每次更新数据 */
   gl.bindBuffer(gl.ARRAY_BUFFER, initTessa.vBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
   gl.vertexAttribPointer(initTessa.vPosition, 3, gl.FLOAT, false, 0, 0);
@@ -45,15 +61,15 @@ function initTessa(level, angle, twistOn, twistDegree) {
   render();
 }
 
-/* ---------------- 以下逻辑几乎不变 ---------------- */
+/* ---------- 子函数 ---------- */
 function divideTriangle(a, b, c, count, angle, twistOn, twistDegree) {
   if (count === 0) {
     tessellaTriangle(a, b, c, angle, twistOn, twistDegree);
   } else {
-    const ab = vec3.create(), bc = vec3.create(), ca = vec3.create();
-    vec3.lerp(ab, a, b, 0.5);
-    vec3.lerp(bc, b, c, 0.5);
-    vec3.lerp(ca, c, a, 0.5);
+    var ab = vec3.create(), bc = vec3.create(), ca = vec3.create();
+    vec3Lerp(ab, a, b, 0.5);
+    vec3Lerp(bc, b, c, 0.5);
+    vec3Lerp(ca, c, a, 0.5);
     --count;
     divideTriangle(a, ab, ca, count, angle, twistOn, twistDegree);
     divideTriangle(ab, b, bc, count, angle, twistOn, twistDegree);
@@ -63,46 +79,44 @@ function divideTriangle(a, b, c, count, angle, twistOn, twistDegree) {
 }
 
 function tessellaTriangle(a, b, c, angle, twistOn, twistDegree) {
-  const zer = vec3.create();
-  vec3.zero(zer);
-  const rad = angle * Math.PI / 180;
-  const twistRad = twistDegree * Math.PI / 180;
+  var zer = vec3.create([0, 0, 0]);
+  var rad = angle * Math.PI / 180;
+  var twistRad = twistDegree * Math.PI / 180;
 
-  const a_new = vec3.create(), b_new = vec3.create(), c_new = vec3.create();
+  var a_new = vec3.create(), b_new = vec3.create(), c_new = vec3.create();
 
   if (!twistOn) {
-    vec3.rotateZ(a_new, a, zer, rad);
-    vec3.rotateZ(b_new, b, zer, rad);
-    vec3.rotateZ(c_new, c, zer, rad);
+    vec3RotateZ(a_new, a, zer, rad);
+    vec3RotateZ(b_new, b, zer, rad);
+    vec3RotateZ(c_new, c, zer, rad);
   } else {
-    const d_a = Math.hypot(a[0], a[1]);
-    const d_b = Math.hypot(b[0], b[1]);
-    const d_c = Math.hypot(c[0], c[1]);
-    const ta = d_a * twistRad, tb = d_b * twistRad, tc = d_c * twistRad;
+    var d_a = Math.hypot(a[0], a[1]);
+    var d_b = Math.hypot(b[0], b[1]);
+    var d_c = Math.hypot(c[0], c[1]);
+    var ta = d_a * twistRad, tb = d_b * twistRad, tc = d_c * twistRad;
 
-    vec3.set(a_new,
-      a[0] * Math.cos(ta) - a[1] * Math.sin(ta),
-      a[0] * Math.sin(ta) + a[1] * Math.cos(ta), 0);
-    vec3.set(b_new,
-      b[0] * Math.cos(tb) - b[1] * Math.sin(tb),
-      b[0] * Math.sin(tb) + b[1] * Math.cos(tb), 0);
-    vec3.set(c_new,
-      c[0] * Math.cos(tc) - c[1] * Math.sin(tc),
-      c[0] * Math.sin(tc) + c[1] * Math.cos(tc), 0);
+    a_new[0] = a[0] * Math.cos(ta) - a[1] * Math.sin(ta);
+    a_new[1] = a[0] * Math.sin(ta) + a[1] * Math.cos(ta);
+    a_new[2] = 0;
+    b_new[0] = b[0] * Math.cos(tb) - b[1] * Math.sin(tb);
+    b_new[1] = b[0] * Math.sin(tb) + b[1] * Math.cos(tb);
+    b_new[2] = 0;
+    c_new[0] = c[0] * Math.cos(tc) - c[1] * Math.sin(tc);
+    c_new[1] = c[0] * Math.sin(tc) + c[1] * Math.cos(tc);
+    c_new[2] = 0;
 
-    // 再整体旋转
-    vec3.rotateZ(a_new, a_new, zer, rad);
-    vec3.rotateZ(b_new, b_new, zer, rad);
-    vec3.rotateZ(c_new, c_new, zer, rad);
+    vec3RotateZ(a_new, a_new, zer, rad);
+    vec3RotateZ(b_new, b_new, zer, rad);
+    vec3RotateZ(c_new, c_new, zer, rad);
   }
 
-  // 画 3 条边（LINES）
-  points.push(a_new[0], a_new[1], a_new[2]);
-  points.push(b_new[0], b_new[1], b_new[2]);
-  points.push(b_new[0], b_new[1], b_new[2]);
-  points.push(c_new[0], c_new[1], c_new[2]);
-  points.push(c_new[0], c_new[1], c_new[2]);
-  points.push(a_new[0], a_new[1], a_new[2]);
+  /* 画 3 条边（LINES） */
+  points.push.apply(points, a_new);
+  points.push.apply(points, b_new);
+  points.push.apply(points, b_new);
+  points.push.apply(points, c_new);
+  points.push.apply(points, c_new);
+  points.push.apply(points, a_new);
 }
 
 function render() {
