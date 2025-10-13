@@ -3,7 +3,7 @@
 var gl, canvas;
 var points = [];
 
-/* 手工替代 0.9.5 缺少的 API */
+/* ---------- 0.9.5 兼容工具 ---------- */
 function vec3FromValues(x, y, z) {
   return vec3.create([x, y, z]);
 }
@@ -11,10 +11,8 @@ function vec3Lerp(out, a, b, t) {
   for (var i = 0; i < 3; ++i) out[i] = a[i] + t * (b[i] - a[i]);
 }
 function vec3RotateZ(out, a, center, rad) {
-  var x = a[0] - center[0],
-      y = a[1] - center[1];
-  var c = Math.cos(rad),
-      s = Math.sin(rad);
+  var x = a[0] - center[0], y = a[1] - center[1];
+  var c = Math.cos(rad), s = Math.sin(rad);
   out[0] = x * c - y * s + center[0];
   out[1] = x * s + y * c + center[1];
   out[2] = a[2];
@@ -42,7 +40,7 @@ function initTessa(level, angle, twistOn, twistDegree) {
 
   divideTriangle(a, b, c, level, angle, twistOn, twistDegree);
 
-  /* 只初始化一次 WebGL 相关资源 */
+  /* 只初始化一次 WebGL 资源 */
   if (!initTessa.program) {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(1, 1, 1, 1);
