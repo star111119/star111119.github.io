@@ -3,31 +3,31 @@
 var gl;
 var points = [];
 
-// 不再自己找 canvas，由 html 调用时把 canvas 当参数传进来
 function initGasket(canvas, numTimesToSubdivide) {
-  gl = canvas.getContext("webgl2");
-  if (!gl) { alert("WebGL 2.0 不可用"); return; }
+  gl = WebGLUtils.setupWebGL(canvas);
+  if (!gl) { alert("WebGL 不可用"); return; }
 
   points = [];
 
-  const vertices = [-1, -1, 0,  0, 1, 0,  1, -1, 0];
-  const u = vec3.fromValues(vertices[0], vertices[1], vertices[2]);
-  const v = vec3.fromValues(vertices[3], vertices[4], vertices[5]);
-  const w = vec3.fromValues(vertices[6], vertices[7], vertices[8]);
+  /* 0.9.5 没有 fromValues，用 create+数组 */
+  var vertices = [-1, -1, 0,  0, 1, 0,  1, -1, 0];
+  var u = vec3.create([vertices[0], vertices[1], vertices[2]]);
+  var v = vec3.create([vertices[3], vertices[4], vertices[5]]);
+  var w = vec3.create([vertices[6], vertices[7], vertices[8]]);
 
   divideTriangle(u, v, w, numTimesToSubdivide);
 
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
-  const program = initShaders(gl, "vertex-shader", "fragment-shader");
+  var program = initShaders(gl, "vertex-shader", "fragment-shader");
   gl.useProgram(program);
 
-  const buffer = gl.createBuffer();
+  var buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
 
-  const vPosition = gl.getAttribLocation(program, "vPosition");
+  var vPosition = gl.getAttribLocation(program, "vPosition");
   gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vPosition);
 
@@ -38,12 +38,19 @@ function triangle(a, b, c) {
   points.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
 }
 
+/* 0.9.5 没有 vec3.lerp，自己算 */
+function vec3Lerp(out, a, b, t) {
+  for (var i = 0; i < 3; ++i) out[i] = a[i] + t * (b[i] - a[i]);
+}
+
 function divideTriangle(a, b, c, count) {
   if (count === 0) { triangle(a, b, c); return; }
-  const ab = vec3.create(), bc = vec3.create(), ca = vec3.create();
-  vec3.lerp(ab, a, b, 0.5);
-  vec3.lerp(bc, b, c, 0.5);
-  vec3.lerp(ca, c, a, 0.5);
+
+  var ab = vec3.create(), bc = vec3.create(), ca = vec3.create();
+  vec3Lerp(ab, a, b, 0.5);
+  vec3Lerp(bc, b, c, 0.5);
+  vec3Lerp(ca, c, a, 0.5);
+
   --count;
   divideTriangle(a, ab, ca, count);
   divideTriangle(b, bc, ab, count);
