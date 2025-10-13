@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Triangle Tessellation（交互版）</title>
+  <style>
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#fafafa;display:flex;flex-direction:column;align-items:center;padding-top:20px;}
+    canvas{border:1px solid #ccc;background:#fff;}
+    .ctrl{margin-top:15px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:14px;}
+    label{font-weight:600;}
+    input[type=range]{width:140px;}
+    input[type=number]{width:60px;}
+    button{padding:5px 12px;}
+  </style>
+
+  <!-- Shader 不变 -->
+  <script id="vertex-shader" type="x-shader/x-vertex">#version 300 es
+in vec4 vPosition;
+void main(){ gl_Position = vPosition; }
+  </script>
+  <script id="fragment-shader" type="x-shader/x-fragment">#version 300 es
+precision mediump float;
+out vec4 fColor;
+void main(){ fColor = vec4(1.0, 0.0, 0.0, 1.0); }
+  </script>
+
+  <script src="../js/common/webgl-utils.js"></script>
+  <script src="../js/common/initShaders.js"></script>
+  <script src="../js/common/glMatrix-0.9.5.min.js"></script>
+  <script src="../js/ch02/triangle-tessa.js"></script>
+</head>
+
+<body>
+  <h2>Triangle Tessellation</h2>
+  <canvas id="gl-canvas" width="600" height="600"></canvas>
+
+  <div class="ctrl">
+    <label>层数：
+      <input id="level" type="range" min="0" max="7" value="3">
+      <span id="levelVal">3</span>
+    </label>
+
+    <label>旋转角度：
+      <input id="angle" type="range" min="0" max="360" value="60">
+      <span id="angleVal">60°</span>
+    </label>
+
+    <label>Twist 强度：
+      <input id="twist" type="range" min="0" max="360" value="60">
+      <span id="twistVal">60°</span>
+    </label>
+
+    <label><input id="twistOn" type="checkbox"> 启用 Twist</label>
+
+    <button id="redraw">重绘</button>
+  </div>
+
+  <script>
+  // 首次加载
+  window.addEventListener('DOMContentLoaded', () => {
+    const $ = id => document.getElementById(id);
+
+    // 实时显示数值
+    $('level').oninput  = e => $('levelVal').textContent  = e.target.value;
+    $('angle').oninput  = e => $('angleVal').textContent  = e.target.value + '°';
+    $('twist').oninput  = e => $('twistVal').textContent  = e.target.value + '°';
+
+    // 重绘入口
+    window.refreshTessa = () => {
+      const level  = parseInt($('level').value);
+      const angle  = parseInt($('angle').value);
+      const twist  = parseInt($('twist').value);
+      const twistOn= $('twistOn').checked;
+      initTessa(level, angle, twistOn, twist);
+    };
+
+    $('redraw').onclick = window.refreshTessa;
+    window.refreshTessa(); // 初始画一次
+  });
+  </script>
+</body>
+</html>
