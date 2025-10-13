@@ -13,14 +13,13 @@
     button{padding:5px 12px;}
   </style>
 
-  <!-- ******* 唯一改动：shader 改成 WebGL 1.0 ******* -->
+  <!-- Shader（WebGL 1.0） -->
   <script id="vertex-shader" type="x-shader/x-vertex">
     attribute vec4 vPosition;
     void main(){
       gl_Position = vPosition;
     }
   </script>
-
   <script id="fragment-shader" type="x-shader/x-fragment">
     precision mediump float;
     void main(){
@@ -28,7 +27,7 @@
     }
   </script>
 
-  <!-- 你本地已有的文件，文件名一字不动 -->
+  <!-- 你本地已有文件，文件名一字不动 -->
   <script src="../js/common/webgl-utils.js"></script>
   <script src="../js/common/initShaders.js"></script>
   <script src="../js/common/glMatrix-0.9.5.min.js"></script>
