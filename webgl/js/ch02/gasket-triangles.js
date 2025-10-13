@@ -1,3 +1,4 @@
+
 "use strict";
 
 var gl;
@@ -9,8 +10,8 @@ function initGasket(canvas, numTimesToSubdivide) {
 
   points = [];
 
-  /* 0.9.5 没有 fromValues，用 create+数组 */
-  var vertices = [-1, -1, 0,  0, 1, 0,  1, -1, 0];
+  // 使用 0.9.5 语法：vec3.create([x,y,z])
+  var vertices = [-1, -1, 0, 0, 1, 0, 1, -1, 0];
   var u = vec3.create([vertices[0], vertices[1], vertices[2]]);
   var v = vec3.create([vertices[3], vertices[4], vertices[5]]);
   var w = vec3.create([vertices[6], vertices[7], vertices[8]]);
@@ -38,7 +39,7 @@ function triangle(a, b, c) {
   points.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
 }
 
-/* 0.9.5 没有 vec3.lerp，自己算 */
+// 0.9.5 没有 vec3.lerp，手写一个
 function vec3Lerp(out, a, b, t) {
   for (var i = 0; i < 3; ++i) out[i] = a[i] + t * (b[i] - a[i]);
 }
