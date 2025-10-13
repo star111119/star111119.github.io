@@ -1,101 +1,59 @@
 "use strict";
-
 const { vec3 } = glMatrix;
 
-var canvas;
-var gl;
-
+var canvas, gl;
 var points = [];
 
-var numTimesToSubdivide = 3;
+// 主入口：由 gasket.html 调用
+function initGasket(numTimesToSubdivide) {
+  canvas = document.getElementById("gl-canvas");
+  gl = canvas.getContext("webgl2");
+  if (!gl) { alert("WebGL 2.0 不可用"); return; }
 
-window.onload = function initTriangles(){
-	canvas = document.getElementById( "gl-canvas" );
+  points = []; // 清空历史顶点
 
-	gl = canvas.getContext("webgl2");
-	if( !gl ){
-		alert( "WebGL isn't available" );
-	}
+  const vertices = [-1, -1, 0,  0, 1, 0,  1, -1, 0];
+  const u = vec3.fromValues(vertices[0], vertices[1], vertices[2]);
+  const v = vec3.fromValues(vertices[3], vertices[4], vertices[5]);
+  const w = vec3.fromValues(vertices[6], vertices[7], vertices[8]);
 
-	// initialise data for Sierpinski gasket
+  divideTriangle(u, v, w, numTimesToSubdivide);
 
-	// first, initialise the corners of the gasket with three points.
-	var vertices = [
-		-1, -1,  0,
-		 0,  1,  0,
-		 1, -1,  0
-	];
+  // WebGL 初始化
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
-	// var u = vec3.create();
-	// vec3.set( u, -1, -1, 0 );
-	var u = vec3.fromValues( vertices[0], vertices[1], vertices[2] );
-	// var v = vec3.create();
-	// vec3.set( v, 0, 1, 0 );
-	var v = vec3.fromValues( vertices[3], vertices[4], vertices[5] );
-	// var w = vec3.create();
-	// vec3.set( w, 1, -1, 0 );
-	var w = vec3.fromValues( vertices[6], vertices[7], vertices[8] );
+  const program = initShaders(gl, "vertex-shader", "fragment-shader");
+  gl.useProgram(program);
 
-	divideTriangle( u, v, w, numTimesToSubdivide );
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
 
-	// configure webgl
-	gl.viewport( 0, 0, canvas.width, canvas.height );
-	gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
+  const vPosition = gl.getAttribLocation(program, "vPosition");
+  gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(vPosition);
 
-	// load shaders and initialise attribute buffers
-	var program = initShaders( gl, "vertex-shader", "fragment-shader" );
-	gl.useProgram( program );
-
-	// load data into gpu
-	var vertexBuffer = gl.createBuffer();
-	gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-	gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( points ), gl.STATIC_DRAW );
-
-	// associate out shader variables with data buffer
-	var vPosition = gl.getAttribLocation( program, "vPosition" );
-	gl.vertexAttribPointer( vPosition, 3, gl.FLOAT, false, 0, 0 );
-	gl.enableVertexAttribArray( vPosition );
-
-	renderTriangles();
-};
-
-function triangle( a, b, c ){
-	//var k;
-	points.push( a[0], a[1], a[2] );
-	points.push( b[0], b[1], b[2] );
-	points.push( c[0], c[1], c[2] );
-	// for( k = 0; k < 3; k++ )
-	// 	points.push( a[k] );
-	// for( k = 0; k < 3; k++ )
-	// 	points.push( b[k] );
-	// for( k = 0; k < 3; k++ )
-	// 	points.push( c[k] );
+  render();
 }
 
-function divideTriangle( a, b, c, count ){
-	// check for end of recursion
-	if( count == 0 ){
-		triangle( a, b, c );
-	}else{
-		var ab = vec3.create();
-		vec3.lerp( ab, a, b, 0.5 ); // ab=a*alpha+b*(1-alpha)
-		var bc = vec3.create();
-		vec3.lerp( bc, b, c, 0.5 );
-		var ca = vec3.create();
-		vec3.lerp( ca, c, a, 0.5 );
-
-		// three new triangles
-		divideTriangle( a, ab, ca, count-1 );
-		divideTriangle( b, bc, ab, count-1 );
-		divideTriangle( c, ca, bc, count-1 );
-
-		//divideTriangle( ab, bc, ca, count-1 );
-	}
+function triangle(a, b, c) {
+  points.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
 }
 
-function renderTriangles(){
-	gl.clear( gl.COLOR_BUFFER_BIT );
-	gl.drawArrays( gl.TRIANGLES, 0, points.length/3 );
+function divideTriangle(a, b, c, count) {
+  if (count === 0) { triangle(a, b, c); return; }
+  const ab = vec3.create(), bc = vec3.create(), ca = vec3.create();
+  vec3.lerp(ab, a, b, 0.5);
+  vec3.lerp(bc, b, c, 0.5);
+  vec3.lerp(ca, c, a, 0.5);
+  --count;
+  divideTriangle(a, ab, ca, count);
+  divideTriangle(b, bc, ab, count);
+  divideTriangle(c, ca, bc, count);
+}
 
-	//gl.drawArrays( gl.LINES, 0, lineNumber );
+function render() {
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLES, 0, points.length / 3);
 }
