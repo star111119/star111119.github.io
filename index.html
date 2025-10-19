@@ -1,62 +1,83 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>star111119</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        /* ========= 1. 把小白变成全屏背景 ========= */
-        .bg {
-            position: fixed;          /* 固定定位，不随滚动条走 */
-            left: 0; top: 0;          /* 贴左上角 */
-            width: 100vw; height: 100vh;
-            object-fit: cover;        /* 保持比例并铺满 */
-            z-index: -1;              /* 放到最底层 */
-        }
+  <meta charset="UTF-8" />
+  <title>star111119</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* ----- 全屏背景图 ----- */
+    .bg {
+      position: fixed;
+      inset: 0;                   /* top left bottom right 全 0 */
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: -1;
+    }
 
-        /* ========= 以下原来样式不变 ========= */
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .box {
-            background: rgba(255,255,255,.85); /* 稍微加一点透明，让背景若隐若现 */
-            padding: 40px 60px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,.15);
-            text-align: center;
-        }
-        h1 { margin: 0 0 10px; font-size: 28px; color: #333; }
-        p  { margin: 0 0 20px; color: #666; }
-        input[type=file] { display: none; }
-        label {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #2563eb;
-            color: #fff;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        label:hover { background: #1e40af; }
-    </style>
+    /* ----- 左上角导航 ----- */
+    nav {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;   /* 纵向排列，后续加链接方便 */
+      gap: 10px;                /* 链接间距 */
+    }
+    nav a {
+      color: #2563eb;
+      font-weight: bold;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 12px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      transition: background 0.2s;
+    }
+    nav a:hover {
+      background: #fff;
+    }
+
+    /* ----- 居中内容 ----- */
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .box {
+      background: rgba(255, 255, 255, 0.85);
+      padding: 40px 60px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      color: #333;
+    }
+  </style>
 </head>
 <body>
-    <!-- ========= 2. 背景图单独放这里 ========= -->
-    <img class="bg"
-         src="https://raw.githubusercontent.com/star111119/star111119.github.io/main/images/xiaobai.jpg"
-         alt="小白">
+  <!-- 背景图 -->
+  <img class="bg"
+       src="https://raw.githubusercontent.com/star111119/star111119.github.io/main/images/xiaobai.jpg"
+       alt="小白" />
 
-    <!-- ========= 3. 正文内容保持不动 ========= -->
-    <div class="box">
-        <h1>star111119</h1>
-        <section style="margin-top:1.5em;font-family:sans-serif;">
-            <h2>我的 WebGL 作品</h2>
-            <p><a href="works.html" target="_blank">👉 进入 WebGL 作品集</a></p>
-        </section>
-    </div>
+  <!-- 左上角导航 -->
+  <nav>
+    <a href="works.html" target="_blank">进入 WebGL 作品集</a>
+    <!-- 后续继续加链接即可 -->
+  </nav>
+
+  <!-- 主内容 -->
+  <div class="box">
+    <h1>star111119</h1>
+    <p>欢迎来到我的主页</p>
+  </div>
 </body>
 </html>
