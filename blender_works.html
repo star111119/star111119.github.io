@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Blender 作品集</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    /* 全屏背景图 */
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: url("https://raw.githubusercontent.com/star111119/star111119.github.io/main/images/xiaobai.jpg") center/cover fixed;
+    }
+
+    /* 返回主页按钮 */
+    .back-home {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      color: #2563eb;
+      font-weight: bold;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.6);
+      padding: 8px 12px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
+      transition: background .2s;
+    }
+    .back-home:hover {
+      background: #fff;
+    }
+
+    /* 居中容器 */
+    .container {
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 80px 20px 40px;
+    }
+
+    /* 网格布局 */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 24px;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    /* 单个作品卡片 */
+    .card {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .2s;
+      text-decoration: none;
+      color: #333;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    /* 缩略图 */
+    .card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* 标题 */
+    .card .title {
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 返回主页 -->
+  <a class="back-home" href="index.html">返回主页</a>
+
+  <!-- 作品网格 -->
+  <div class="container">
+    <div class="grid">
+      <!-- 示例作品 1 -->
+      <a class="card" href="works/blender_work_01.html">
+        <img src="https://raw.githubusercontent.com/star111119/star111119.github.io/main/images/blender_thumb_01.jpg" alt="作品 1"/>
+        <div class="title">Blender 作品 1</div>
+      </a>
+
+      <!-- 示例作品 2 -->
+      <a class="card" href="works/blender_work_02.html">
+        <img src="https://raw.githubusercontent.com/star111119/star111119.github.io/main/images/blender_thumb_02.jpg" alt="作品 2"/>
+        <div class="title">Blender 作品 2</div>
+      </a>
+
+      <!-- 示例作品 3 -->
+      <a class="card" href="works/blender_work_03.html">
+        <img src="https://raw.githubusercontent.com/star111119/star111119.github.io/main/images/blender_thumb_03.jpg" alt="作品 3"/>
+        <div class="title">Blender 作品 3</div>
+      </a>
+
+      <!-- 可以继续复制 .card 添加更多作品 -->
+    </div>
+  </div>
+
+</body>
+</html>
