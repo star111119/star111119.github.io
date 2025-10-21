@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Chap3 Demo — Rotating / Scaling / Translating Square</title>
+
+<script id="rot-v-shader" type="x-shader/x-vertex">
+#version 300 es
+in vec4 vPosition;
+uniform float theta;
+uniform float sx;
+uniform float tx;
+uniform float ty;
+void main(){
+    float c = cos(theta), s = sin(theta);
+    vec2 pos = vPosition.xy * sx;   // 缩放
+    pos.x += tx;  pos.y += ty;      // 平移
+    gl_Position.x = pos.x * c - pos.y * s;
+    gl_Position.y = pos.x * s + pos.y * c;
+    gl_Position.z = 0.0;
+    gl_Position.w = 1.0;
+}
+</script>
+
+<script id="rot-f-shader" type="x-shader/x-fragment">
+#version 300 es
+precision mediump float;
+out vec4 fColor;
+void main(){ fColor = vec4(1.0, 0.0, 0.0, 1.0); }
+</script>
+
+<script src="../js/common/webgl-utils.js"></script>
+<script src="../js/common/initShaders.js"></script>
+<script src="../js/common/gl-matrix-min.js"></script>
+<script src="../js/ch03/rotsquareslider.js"></script>
+
+<style>fieldset{display:inline-block;}input[type=range]{width:180px;}</style>
+</head>
+
+<body onload="initRotSquare()">
+<h1>旋转 / 缩放 / 平移 正方形</h1>
+<canvas id="rot-canvas" width="512" height="512">你的浏览器不支持 HTML5 Canvas</canvas>
+
+<fieldset>
+<legend>转动控制</legend>
+<button id="direction" onclick="changeDir()">换个转动方向</button><br>
+Speed 0<input id="speedcon" type="range" min="0" max="100" value="50" step="10">100
+<br>
+Scale 0.5<input id="scale" type="range" min="50" max="200" value="100" step="5">2.0
+<br>
+OffsetX -1<input id="offX" type="range" min="-100" max="100" value="0" step="5">1
+<br>
+OffsetY -1<input id="offY" type="range" min="-100" max="100" value="0" step="5">1
+</fieldset>
+</body>
+</html>
