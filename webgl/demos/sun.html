@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太阳系星球运动</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(ellipse at center, #0a0e2a 0%, #000000 70%);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+        }
+        
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(white, rgba(255, 255, 255, 0.2) 2px, transparent 3px),
+                radial-gradient(white, rgba(255, 255, 255, 0.15) 1px, transparent 2px),
+                radial-gradient(white, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+            z-index: -1;
+        }
+        
+        .solar-system {
+            position: relative;
+            width: 900px;
+            height: 900px;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        
+        .sun {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            margin-left: -50px;
+            margin-top: -50px;
+            background: radial-gradient(circle at 30% 30%, #FFD700, #FF8C00, #FF4500);
+            border-radius: 50%;
+            box-shadow: 0 0 60px #FFA500, 0 0 120px #FF8C00, 0 0 180px rgba(255, 165, 0, 0.5);
+            animation: rotate 20s linear infinite;
+            z-index: 10;
+        }
+        
+        .sun::before {
+            content: "";
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.3), transparent 70%);
+            border-radius: 50%;
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        .earth-orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 600px;
+            height: 600px;
+            margin-left: -300px;
+            margin-top: -300px;
+            border: 1px dashed rgba(100, 149, 237, 0.2);
+            border-radius: 50%;
+            animation: orbit 36.5s linear infinite;
+        }
+        
+        .earth-container {
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 50px;
+            height: 50px;
+            margin-left: -25px;
+            margin-top: -25px;
+            animation: orbit 3s linear infinite;
+        }
+        
+        .earth {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at 30% 30%, #4169E1, #1E90FF, #0066CC);
+            border-radius: 50%;
+            position: relative;
+            animation: rotate 1.5s linear infinite;
+            box-shadow: 0 0 15px rgba(65, 105, 225, 0.6);
+        }
+        
+        .earth::before {
+            content: "";
+            position: absolute;
+            top: 20%;
+            left: 10%;
+            width: 30%;
+            height: 25%;
+            background: #228B22;
+            border-radius: 50% 30% 60% 40%;
+            opacity: 0.8;
+        }
+        
+        .earth::after {
+            content: "";
+            position: absolute;
+            top: 60%;
+            right: 15%;
+            width: 25%;
+            height: 20%;
+            background: #32CD32;
+            border-radius: 40% 60% 30% 50%;
+            opacity: 0.7;
+        }
+        
+        .moon-orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            margin-left: -60px;
+            margin-top: -60px;
+            border: 1px dashed rgba(200, 200, 200, 0.3);
+            border-radius: 50%;
+            animation: orbit 2.7s linear infinite;
+        }
+        
+        .moon-container {
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 15px;
+            height: 15px;
+            margin-left: -7.5px;
+            margin-top: -7.5px;
+            animation: orbit 2.7s linear infinite;
+        }
+        
+        .moon {
+            width: 15px;
+            height: 15px;
+            background: radial-gradient(circle at 30% 30%, #C0C0C0, #A9A9A9, #808080);
+            border-radius: 50%;
+            animation: rotate 2.7s linear infinite;
+            position: relative;
+            box-shadow: 0 0 8px rgba(192, 192, 192, 0.5);
+        }
+        
+        .moon::before {
+            content: "";
+            position: absolute;
+            top: 15%;
+            left: 20%;
+            width: 8px;
+            height: 8px;
+            background: #696969;
+            border-radius: 50%;
+            opacity: 0.6;
+        }
+        
+        .moon::after {
+            content: "";
+            position: absolute;
+            bottom: 25%;
+            right: 30%;
+            width: 5px;
+            height: 5px;
+            background: #778899;
+            border-radius: 50%;
+            opacity: 0.5;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes orbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.1; }
+        }
+        
+        .info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #E0F7FA;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            max-width: 250px;
+        }
+        
+        .info h3 {
+            margin-top: 0;
+            color: #FFD700;
+            font-weight: 600;
+        }
+        
+        .info p {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        
+        .speed-control {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #E0F7FA;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .speed-control h4 {
+            margin-top: 0;
+            color: #FFD700;
+            font-weight: 600;
+        }
+        
+        .speed-control button {
+            margin: 5px;
+            padding: 8px 15px;
+            background: rgba(255, 215, 0, 0.2);
+            color: #FFD700;
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .speed-control button:hover {
+            background: rgba(255, 215, 0, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="solar-system">
+        <div class="sun"></div>
+        
+        <div class="earth-orbit">
+            <div class="earth-container">
+                <div class="earth">
+                    <div class="moon-orbit">
+                        <div class="moon-container">
+                            <div class="moon"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="info">
+        <h3>太阳系模拟</h3>
+        <p>🌞 太阳：自转中</p>
+        <p>🌍 地球：自转+公转</p>
+        <p>🌙 月球：自转+公转</p>
+        <p>公转周期比例已调整，便于观察</p>
+    </div>
+    
+    <div class="speed-control">
+        <h4>速度控制</h4>
+        <button onclick="changeSpeed(0.5)">慢速</button>
+        <button onclick="changeSpeed(1)">正常</button>
+        <button onclick="changeSpeed(2)">快速</button>
+        <button onclick="changeSpeed(5)">超快</button>
+    </div>
+    
+    <script>
+        // 获取所有需要控制速度的元素
+        const sun = document.querySelector('.sun');
+        const earthOrbit = document.querySelector('.earth-orbit');
+        const earth = document.querySelector('.earth');
+        const moonOrbit = document.querySelector('.moon-orbit');
+        const moon = document.querySelector('.moon');
+        
+        // 存储原始动画持续时间
+        const originalDurations = {
+            sunRotate: 20,
+            earthOrbit: 36.5,
+            earthRotate: 1.5,
+            moonOrbit: 2.7,
+            moonRotate: 2.7
+        };
+        
+        let currentSpeed = 1;
+        
+        // 改变速度的函数
+        function changeSpeed(multiplier) {
+            currentSpeed = multiplier;
+            
+            // 更新太阳自转
+            sun.style.animationDuration = `${originalDurations.sunRotate / multiplier}s`;
+            
+            // 更新地球公转
+            earthOrbit.style.animationDuration = `${originalDurations.earthOrbit / multiplier}s`;
+            
+            // 更新地球自转
+            earth.style.animationDuration = `${originalDurations.earthRotate / multiplier}s`;
+            
+            // 更新月球公转
+            moonOrbit.style.animationDuration = `${originalDurations.moonOrbit / multiplier}s`;
+            
+            // 更新月球自转
+            moon.style.animationDuration = `${originalDurations.moonRotate / multiplier}s`;
+        }
+        
+        // 添加一些交互效果
+        document.addEventListener('DOMContentLoaded', function() {
+            const info = document.querySelector('.info');
+            const speedControl = document.querySelector('.speed-control');
+            
+            // 信息面板动画
+            info.style.opacity = '0';
+            info.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                info.style.transition = 'all 0.8s ease';
+                info.style.opacity = '1';
+                info.style.transform = 'translateY(0)';
+            }, 500);
+            
+            // 速度控制面板动画
+            speedControl.style.opacity = '0';
+            speedControl.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                speedControl.style.transition = 'all 0.8s ease';
+                speedControl.style.opacity = '1';
+                speedControl.style.transform = 'translateY(0)';
+            }, 800);
+        });
+        
+        // 添加键盘控制
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case '1':
+                    changeSpeed(0.5);
+                    break;
+                case '2':
+                    changeSpeed(1);
+                    break;
+                case '3':
+                    changeSpeed(2);
+                    break;
+                case '4':
+                    changeSpeed(5);
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
