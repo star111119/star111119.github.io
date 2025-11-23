@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D小球Phong光照模型</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        #controls {
+            width: 320px;
+            padding: 25px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+            max-height: 100vh;
+            border-radius: 16px 0 0 16px;
+        }
+        .control-group {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .control-group h3 {
+            margin-top: 0;
+            color: #7dd3fc;
+            font-size: 18px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(125, 211, 252, 0.3);
+            padding-bottom: 8px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 15px;
+            height: 6px;
+            background: rgba(100, 116, 139, 0.3);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+        }
+        input[type="color"] {
+            width: 100%;
+            height: 36px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            background: rgba(15, 23, 42, 0.5);
+        }
+        .value-display {
+            display: inline-block;
+            width: 40px;
+            text-align: right;
+            color: #7dd3fc;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(15, 23, 42, 0.5);
+            color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        h2 {
+            color: #7dd3fc;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(125, 211, 252, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="glCanvas" width="800" height="600"></canvas>
+    </div>
+    
+    <div id="controls">
+        <h2>Phong光照控制面板</h2>
+        
+        <div class="control-group">
+            <h3>材质属性</h3>
+            <label>环境光反射系数: <span class="value-display" id="ka-value">0.2</span></label>
+            <input type="range" id="ka" min="0" max="1" step="0.01" value="0.2">
+            
+            <label>漫反射系数: <span class="value-display" id="kd-value">0.7</span></label>
+            <input type="range" id="kd" min="0" max="1" step="0.01" value="0.7">
+            
+            <label>高光反射系数: <span class="value-display" id="ks-value">0.5</span></label>
+            <input type="range" id="ks" min="0" max="1" step="0.01" value="0.5">
+            
+            <label>高光亮度系数: <span class="value-display" id="shininess-value">32</span></label>
+            <input type="range" id="shininess" min="1" max="256" step="1" value="32">
+            
+            <label>材质颜色:</label>
+            <input type="color" id="material-color" value="#4a8cff">
+        </div>
+        
+        <div class="control-group">
+            <h3>光源属性</h3>
+            <label>光源X位置: <span class="value-display" id="lightX-value">2</span></label>
+            <input type="range" id="lightX" min="-5" max="5" step="0.1" value="2">
+            
+            <label>光源Y位置: <span class="value-display" id="lightY-value">2</span></label>
+            <input type="range" id="lightY" min="-5" max="5" step="0.1" value="2">
+            
+            <label>光源Z位置: <span class="value-display" id="lightZ-value">2</span></label>
+            <input type="range" id="lightZ" min="-5" max="5" step="0.1" value="2">
+            
+            <label>光源颜色:</label>
+            <input type="color" id="light-color" value="#ffffff">
+        </div>
+        
+        <div class="control-group">
+            <h3>着色模式</h3>
+            <label>
+                <input type="radio" name="shading" value="phong" checked> Phong Shading
+            </label>
+            <label>
+                <input type="radio" name="shading" value="gouraud"> Gouraud Shading
+            </label>
+        </div>
+    </div>
+
+    <script>
+        // 顶点着色器（Phong Shading）
+        const phongVertexShaderSource = `
+            attribute vec4 aVertexPosition;
+            attribute vec3 aVertexNormal;
+            
+            uniform mat4 uModelViewMatrix;
+            uniform mat4 uProjectionMatrix;
+            uniform mat4 uNormalMatrix;
+            
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+            
+            void main() {
+                gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+                vNormal = normalize(vec3(uNormalMatrix * vec4(aVertexNormal, 0.0)));
+                vPosition = vec3(uModelViewMatrix * aVertexPosition);
+            }
+        `;
+
+        // 片段着色器（Phong Shading）
+        const phongFragmentShaderSource = `
+            precision mediump float;
+            
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+            
+            uniform vec3 uLightPosition;
+            uniform vec3 uLightColor;
+            uniform vec3 uAmbientColor;
+            uniform vec3 uDiffuseColor;
+            uniform vec3 uSpecularColor;
+            uniform float uKa;
+            uniform float uKd;
+            uniform float uKs;
+            uniform float uShininess;
+            
+            void main() {
+                vec3 normal = normalize(vNormal);
+                vec3 lightDirection = normalize(uLightPosition - vPosition);
+                vec3 viewDirection = normalize(-vPosition);
+                vec3 reflectDirection = reflect(-lightDirection, normal);
+                
+                // 环境光
+                vec3 ambient = uKa * uAmbientColor * uLightColor;
+                
+                // 漫反射
+                float diff = max(dot(normal, lightDirection), 0.0);
+                vec3 diffuse = uKd * diff * uDiffuseColor * uLightColor;
+                
+                // 镜面反射
+                float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), uShininess);
+                vec3 specular = uKs * spec * uSpecularColor * uLightColor;
+                
+                vec3 result = ambient + diffuse + specular;
+                gl_FragColor = vec4(result, 1.0);
+            }
+        `;
+
+        // 顶点着色器（Gouraud Shading）
+        const gouraudVertexShaderSource = `
+            attribute vec4 aVertexPosition;
+            attribute vec3 aVertexNormal;
+            
+            uniform mat4 uModelViewMatrix;
+            uniform mat4 uProjectionMatrix;
+            uniform mat4 uNormalMatrix;
+            uniform vec3 uLightPosition;
+            uniform vec3 uLightColor;
+            uniform vec3 uAmbientColor;
+            uniform vec3 uDiffuseColor;
+            uniform vec3 uSpecularColor;
+            uniform float uKa;
+            uniform float uKd;
+            uniform float uKs;
+            uniform float uShininess;
+            
+            varying vec3 vColor;
+            
+            void main() {
+                gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+                
+                vec3 normal = normalize(vec3(uNormalMatrix * vec4(aVertexNormal, 0.0)));
+                vec3 position = vec3(uModelViewMatrix * aVertexPosition);
+                vec3 lightDirection = normalize(uLightPosition - position);
+                vec3 viewDirection = normalize(-position);
+                vec3 reflectDirection = reflect(-lightDirection, normal);
+                
+                // 环境光
+                vec3 ambient = uKa * uAmbientColor * uLightColor;
+                
+                // 漫反射
+                float diff = max(dot(normal, lightDirection), 0.0);
+                vec3 diffuse = uKd * diff * uDiffuseColor * uLightColor;
+                
+                // 镜面反射
+                float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), uShininess);
+                vec3 specular = uKs * spec * uSpecularColor * uLightColor;
+                
+                vColor = ambient + diffuse + specular;
+            }
+        `;
+
+        // 片段着色器（Gouraud Shading）
+        const gouraudFragmentShaderSource = `
+            precision mediump float;
+            varying vec3 vColor;
+            
+            void main() {
+                gl_FragColor = vec4(vColor, 1.0);
+            }
+        `;
+
+        let gl, program, programGouraud;
+        let canvas;
+        let sphereBuffers;
+        let rotation = 0;
+        let currentShading = 'phong';
+
+        // 材质参数
+        let material = {
+            ka: 0.2,
+            kd: 0.7,
+            ks: 0.5,
+            shininess: 32,
+            color: [0.29, 0.55, 1.0]
+        };
+
+        // 光源参数
+        let light = {
+            position: [2.0, 2.0, 2.0],
+            color: [1.0, 1.0, 1.0]
+        };
+
+        function main() {
+            canvas = document.getElementById('glCanvas');
+            gl = canvas.getContext('webgl');
+            
+            if (!gl) {
+                alert('无法初始化WebGL');
+                return;
+            }
+
+            // 创建着色器程序
+            program = createShaderProgram(phongVertexShaderSource, phongFragmentShaderSource);
+            programGouraud = createShaderProgram(gouraudVertexShaderSource, gouraudFragmentShaderSource);
+            
+            // 创建球体
+            sphereBuffers = createSphere(1.0, 30, 30);
+            
+            // 设置清除颜色并启用深度测试
+            gl.clearColor(0.05, 0.05, 0.1, 1.0);
+            gl.enable(gl.DEPTH_TEST);
+            
+            // 设置控件事件监听器
+            setupEventListeners();
+            
+            // 开始渲染循环
+            requestAnimationFrame(render);
+        }
+
+        function createShaderProgram(vertexSource, fragmentSource) {
+            const vertexShader = loadShader(gl.VERTEX_SHADER, vertexSource);
+            const fragmentShader = loadShader(gl.FRAGMENT_SHADER, fragmentSource);
+            
+            const shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+            
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                alert('无法初始化着色器程序: ' + gl.getProgramInfoLog(shaderProgram));
+                return null;
+            }
+            
+            return shaderProgram;
+        }
+
+        function loadShader(type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                alert('着色器编译错误: ' + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            
+            return shader;
+        }
+
+        function createSphere(radius, latBands, longBands) {
+            const positions = [];
+            const normals = [];
+            const indices = [];
+            
+            for (let lat = 0; lat <= latBands; lat++) {
+                const theta = lat * Math.PI / latBands;
+                const sinTheta = Math.sin(theta);
+                const cosTheta = Math.cos(theta);
+                
+                for (let long = 0; long <= longBands; long++) {
+                    const phi = long * 2 * Math.PI / longBands;
+                    const sinPhi = Math.sin(phi);
+                    const cosPhi = Math.cos(phi);
+                    
+                    const x = cosPhi * sinTheta;
+                    const y = cosTheta;
+                    const z = sinPhi * sinTheta;
+                    
+                    positions.push(radius * x, radius * y, radius * z);
+                    normals.push(x, y, z);
+                }
+            }
+            
+            for (let lat = 0; lat < latBands; lat++) {
+                for (let long = 0; long < longBands; long++) {
+                    const first = (lat * (longBands + 1)) + long;
+                    const second = first + longBands + 1;
+                    
+                    indices.push(first, second, first + 1);
+                    indices.push(second, second + 1, first + 1);
+                }
+            }
+            
+            const positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+            
+            const normalBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+            
+            const indexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+            
+            return {
+                position: positionBuffer,
+                normal: normalBuffer,
+                indices: indexBuffer,
+                vertexCount: indices.length
+            };
+        }
+
+        function setupEventListeners() {
+            // 材质控制
+            document.getElementById('ka').addEventListener('input', function(e) {
+                material.ka = parseFloat(e.target.value);
+                document.getElementById('ka-value').textContent = e.target.value;
+            });
+            
+            document.getElementById('kd').addEventListener('input', function(e) {
+                material.kd = parseFloat(e.target.value);
+                document.getElementById('kd-value').textContent = e.target.value;
+            });
+            
+            document.getElementById('ks').addEventListener('input', function(e) {
+                material.ks = parseFloat(e.target.value);
+                document.getElementById('ks-value').textContent = e.target.value;
+            });
+            
+            document.getElementById('shininess').addEventListener('input', function(e) {
+                material.shininess = parseFloat(e.target.value);
+                document.getElementById('shininess-value').textContent = e.target.value;
+            });
+            
+            document.getElementById('material-color').addEventListener('input', function(e) {
+                const hex = e.target.value;
+                material.color = [
+                    parseInt(hex.substr(1, 2), 16) / 255,
+                    parseInt(hex.substr(3, 2), 16) / 255,
+                    parseInt(hex.substr(5, 2), 16) / 255
+                ];
+            });
+            
+            // 光源控制
+            document.getElementById('lightX').addEventListener('input', function(e) {
+                light.position[0] = parseFloat(e.target.value);
+                document.getElementById('lightX-value').textContent = e.target.value;
+            });
+            
+            document.getElementById('lightY').addEventListener('input', function(e) {
+                light.position[1] = parseFloat(e.target.value);
+                document.getElementById('lightY-value').textContent = e.target.value;
+            });
+            
+            document.getElementById('lightZ').addEventListener('input', function(e) {
+                light.position[2] = parseFloat(e.target.value);
+                document.getElementById('lightZ-value').textContent = e.target.value;
+            });
+            
+            document.getElementById('light-color').addEventListener('input', function(e) {
+                const hex = e.target.value;
+                light.color = [
+                    parseInt(hex.substr(1, 2), 16) / 255,
+                    parseInt(hex.substr(3, 2), 16) / 255,
+                    parseInt(hex.substr(5, 2), 16) / 255
+                ];
+            });
+            
+            // 着色模式切换
+            document.querySelectorAll('input[name="shading"]').forEach(radio => {
+                radio.addEventListener('change', function(e) {
+                    currentShading = e.target.value;
+                });
+            });
+        }
+
+        function render() {
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            
+            const currentProgram = currentShading === 'phong' ? program : programGouraud;
+            gl.useProgram(currentProgram);
+            
+            // 设置模型视图矩阵和投影矩阵
+            const projectionMatrix = mat4.create();
+            mat4.perspective(projectionMatrix, 45 * Math.PI / 180, canvas.width / canvas.height, 0.1, 100.0);
+            
+            const modelViewMatrix = mat4.create();
+            mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -5.0]);
+            mat4.rotateY(modelViewMatrix, modelViewMatrix, rotation);
+            rotation += 0.01;
+            
+            const normalMatrix = mat4.create();
+            mat4.invert(normalMatrix, modelViewMatrix);
+            mat4.transpose(normalMatrix, normalMatrix);
+            
+            // 设置uniform变量
+            const uniforms = {
+                uProjectionMatrix: gl.getUniformLocation(currentProgram, 'uProjectionMatrix'),
+                uModelViewMatrix: gl.getUniformLocation(currentProgram, 'uModelViewMatrix'),
+                uNormalMatrix: gl.getUniformLocation(currentProgram, 'uNormalMatrix'),
+                uLightPosition: gl.getUniformLocation(currentProgram, 'uLightPosition'),
+                uLightColor: gl.getUniformLocation(currentProgram, 'uLightColor'),
+                uAmbientColor: gl.getUniformLocation(currentProgram, 'uAmbientColor'),
+                uDiffuseColor: gl.getUniformLocation(currentProgram, 'uDiffuseColor'),
+                uSpecularColor: gl.getUniformLocation(currentProgram, 'uSpecularColor'),
+                uKa: gl.getUniformLocation(currentProgram, 'uKa'),
+                uKd: gl.getUniformLocation(currentProgram, 'uKd'),
+                uKs: gl.getUniformLocation(currentProgram, 'uKs'),
+                uShininess: gl.getUniformLocation(currentProgram, 'uShininess')
+            };
+            
+            gl.uniformMatrix4fv(uniforms.uProjectionMatrix, false, projectionMatrix);
+            gl.uniformMatrix4fv(uniforms.uModelViewMatrix, false, modelViewMatrix);
+            gl.uniformMatrix4fv(uniforms.uNormalMatrix, false, normalMatrix);
+            gl.uniform3fv(uniforms.uLightPosition, light.position);
+            gl.uniform3fv(uniforms.uLightColor, light.color);
+            gl.uniform3fv(uniforms.uAmbientColor, material.color);
+            gl.uniform3fv(uniforms.uDiffuseColor, material.color);
+            gl.uniform3fv(uniforms.uSpecularColor, [1.0, 1.0, 1.0]);
+            gl.uniform1f(uniforms.uKa, material.ka);
+            gl.uniform1f(uniforms.uKd, material.kd);
+            gl.uniform1f(uniforms.uKs, material.ks);
+            gl.uniform1f(uniforms.uShininess, material.shininess);
+            
+            // 绑定顶点数据
+            const attribLocations = {
+                position: gl.getAttribLocation(currentProgram, 'aVertexPosition'),
+                normal: gl.getAttribLocation(currentProgram, 'aVertexNormal')
+            };
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, sphereBuffers.position);
+            gl.vertexAttribPointer(attribLocations.position, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(attribLocations.position);
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, sphereBuffers.normal);
+            gl.vertexAttribPointer(attribLocations.normal, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(attribLocations.normal);
+            
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sphereBuffers.indices);
+            gl.drawElements(gl.TRIANGLES, sphereBuffers.vertexCount, gl.UNSIGNED_SHORT, 0);
+            
+            requestAnimationFrame(render);
+        }
+
+        // 简单的mat4库
+        const mat4 = {
+            create: function() {
+                return new Float32Array([
+                    1, 0, 0, 0,
+                    0, 1, 0, 0,
+                    0, 0, 1, 0,
+                    0, 0, 0, 1
+                ]);
+            },
+            
+            perspective: function(out, fovy, aspect, near, far) {
+                const f = 1.0 / Math.tan(fovy / 2);
+                const nf = 1 / (near - far);
+                
+                out[0] = f / aspect;
+                out[1] = 0;
+                out[2] = 0;
+                out[3] = 0;
+                out[4] = 0;
+                out[5] = f;
+                out[6] = 0;
+                out[7] = 0;
+                out[8] = 0;
+                out[9] = 0;
+                out[10] = (far + near) * nf;
+                out[11] = -1;
+                out[12] = 0;
+                out[13] = 0;
+                out[14] = 2 * far * near * nf;
+                out[15] = 0;
+                
+                return out;
+            },
+            
+            translate: function(out, a, v) {
+                const x = v[0], y = v[1], z = v[2];
+                
+                out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
+                out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
+                out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
+                out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
+                
+                return out;
+            },
+            
+            rotateY: function(out, a, rad) {
+                const s = Math.sin(rad);
+                const c = Math.cos(rad);
+                const a00 = a[0];
+                const a01 = a[1];
+                const a02 = a[2];
+                const a03 = a[3];
+                const a20 = a[8];
+                const a21 = a[9];
+                const a22 = a[10];
+                const a23 = a[11];
+                
+                out[0] = a00 * c - a20 * s;
+                out[1] = a01 * c - a21 * s;
+                out[2] = a02 * c - a22 * s;
+                out[3] = a03 * c - a23 * s;
+                out[8] = a00 * s + a20 * c;
+                out[9] = a01 * s + a21 * c;
+                out[10] = a02 * s + a22 * c;
+                out[11] = a03 * s + a23 * c;
+                
+                return out;
+            },
+            
+            invert: function(out, a) {
+                const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+                const a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+                const a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+                const a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+                
+                const b00 = a00 * a11 - a01 * a10;
+                const b01 = a00 * a12 - a02 * a10;
+                const b02 = a00 * a13 - a03 * a10;
+                const b03 = a01 * a12 - a02 * a11;
+                const b04 = a01 * a13 - a03 * a11;
+                const b05 = a02 * a13 - a03 * a12;
+                const b06 = a20 * a31 - a21 * a30;
+                const b07 = a20 * a32 - a22 * a30;
+                const b08 = a20 * a33 - a23 * a30;
+                const b09 = a21 * a32 - a22 * a31;
+                const b10 = a21 * a33 - a23 * a31;
+                const b11 = a22 * a33 - a23 * a32;
+                
+                let det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+                
+                if (!det) return null;
+                
+                det = 1.0 / det;
+                
+                out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+                out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+                out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+                out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
+                out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+                out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+                out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+                out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
+                out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+                out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+                out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+                out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
+                out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
+                out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
+                out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+                out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+                
+                return out;
+            },
+            
+            transpose: function(out, a) {
+                if (out === a) {
+                    const a01 = a[1], a02 = a[2], a03 = a[3];
+                    const a12 = a[6], a13 = a[7];
+                    const a23 = a[11];
+                    
+                    out[1] = a[4];
+                    out[2] = a[8];
+                    out[3] = a[12];
+                    out[4] = a01;
+                    out[6] = a[9];
+                    out[7] = a[13];
+                    out[8] = a02;
+                    out[9] = a12;
+                    out[11] = a[14];
+                    out[12] = a03;
+                    out[13] = a13;
+                    out[14] = a23;
+                } else {
+                    out[0] = a[0];
+                    out[1] = a[4];
+                    out[2] = a[8];
+                    out[3] = a[12];
+                    out[4] = a[1];
+                    out[5] = a[5];
+                    out[6] = a[9];
+                    out[7] = a[13];
+                    out[8] = a[2];
+                    out[9] = a[6];
+                    out[10] = a[10];
+                    out[11] = a[14];
+                    out[12] = a[3];
+                    out[13] = a[7];
+                    out[14] = a[11];
+                    out[15] = a[15];
+                }
+                
+                return out;
+            }
+        };
+
+        window.onload = main;
+    </script>
+</body>
+</html>
