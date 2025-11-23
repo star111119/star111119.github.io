@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>递归球体绘制</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .controls button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .controls button:hover {
+            background-color: #45a049;
+        }
+        
+        .controls button.active {
+            background-color: #2196F3;
+        }
+        
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>递归球体绘制 - 基于正四面体细分</h1>
+        
+        <div class="controls">
+            <button id="wireframeBtn" class="active">线框模式</button>
+            <button id="solidBtn">实体模式</button>
+            <button id="increaseRecursion">增加递归深度</button>
+            <button id="decreaseRecursion">减少递归深度</button>
+        </div>
+        
+        <canvas id="canvas" width="800" height="600"></canvas>
+        
+        <div class="info">
+            <p>当前递归深度: <span id="recursionLevel">2</span></p>
+            <p>顶点数量: <span id="vertexCount">258</span></p>
+            <p>三角形数量: <span id="triangleCount">512</span></p>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: #ff6b6b;"></div>
+                    <span>递归深度 0</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: #4ecdc4;"></div>
+                    <span>递归深度 1</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background-color: #45b7d1;"></div>
+                    <span>递归深度 2+</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SphereRenderer {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.width = canvas.width;
+                this.height = canvas.height;
+                
+                // 相机参数
+                this.camera = {
+                    x: 0,
+                    y: 0,
+                    z: 5
+                };
+                
+                // 旋转参数
+                this.rotation = {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                };
+                
+                // 光照参数
+                this.light = {
+                    x: 1,
+                    y: 1,
+                    z: 1
+                };
+                
+                // 递归深度
+                this.recursionLevel = 2;
+                
+                // 渲染模式
+                this.renderMode = 'wireframe';
+                
+                // 初始化正四面体
+                this.initializeTetrahedron();
+                
+                // 开始动画循环
+                this.animate();
+            }
+            
+            // 初始化正四面体
+            initializeTetrahedron() {
+                // 正四面体的四个顶点（单位球面上）
+                const a = Math.sqrt(8/9);
+                const b = Math.sqrt(2/9);
+                const c = Math.sqrt(2/3);
+                
+                this.vertices = [
+                    {x: 0, y: 0, z: 1},                    // 顶点
+                    {x: a, y: 0, z: -1/3},                 // 底面顶点1
+                    {x: -b, y: c, z: -1/3},                // 底面顶点2
+                    {x: -b, y: -c, z: -1/3}                // 底面顶点3
+                ];
+                
+                // 初始三角形面
+                this.triangles = [
+                    {vertices: [0, 1, 2], recursion: 0},
+                    {vertices: [0, 2, 3], recursion: 0},
+                    {vertices: [0, 3, 1], recursion: 0},
+                    {vertices: [1, 2, 3], recursion: 0}
+                ];
+                
+                this.subdivideTriangles();
+            }
+            
+            // 细分三角形
+            subdivideTriangles() {
+                for (let level = 0; level < this.recursionLevel; level++) {
+                    const newTriangles = [];
+                    
+                    for (const triangle of this.triangles) {
+                        const [i0, i1, i2] = triangle.vertices;
+                        const v0 = this.vertices[i0];
+                        const v1 = this.vertices[i1];
+                        const v2 = this.vertices[i2];
+                        
+                        // 计算每条边的中点并归一化到单位球面
+                        const midPoint01 = this.normalize(this.midpoint(v0, v1));
+                        const midPoint12 = this.normalize(this.midpoint(v1, v2));
+                        const midPoint20 = this.normalize(this.midpoint(v2, v0));
+                        
+                        // 添加新顶点
+                        const i01 = this.vertices.length;
+                        this.vertices.push(midPoint01);
+                        
+                        const i12 = this.vertices.length;
+                        this.vertices.push(midPoint12);
+                        
+                        const i20 = this.vertices.length;
+                        this.vertices.push(midPoint20);
+                        
+                        // 创建4个新三角形
+                        const newRecursion = triangle.recursion + 1;
+                        newTriangles.push(
+                            {vertices: [i0, i01, i20], recursion: newRecursion},
+                            {vertices: [i1, i12, i01], recursion: newRecursion},
+                            {vertices: [i2, i20, i12], recursion: newRecursion},
+                            {vertices: [i01, i12, i20], recursion: newRecursion}
+                        );
+                    }
+                    
+                    this.triangles = newTriangles;
+                }
+                
+                this.updateInfo();
+            }
+            
+            // 计算中点
+            midpoint(v1, v2) {
+                return {
+                    x: (v1.x + v2.x) / 2,
+                    y: (v1.y + v2.y) / 2,
+                    z: (v1.z + v2.z) / 2
+                };
+            }
+            
+            // 归一化到单位球面
+            normalize(vertex) {
+                const length = Math.sqrt(vertex.x * vertex.x + vertex.y * vertex.y + vertex.z * vertex.z);
+                return {
+                    x: vertex.x / length,
+                    y: vertex.y / length,
+                    z: vertex.z / length
+                };
+            }
+            
+            // 3D旋转变换
+            rotateVertex(vertex) {
+                let {x, y, z} = vertex;
+                
+                // 绕X轴旋转
+                const cosX = Math.cos(this.rotation.x);
+                const sinX = Math.sin(this.rotation.x);
+                const y1 = y * cosX - z * sinX;
+                const z1 = y * sinX + z * cosX;
+                
+                // 绕Y轴旋转
+                const cosY = Math.cos(this.rotation.y);
+                const sinY = Math.sin(this.rotation.y);
+                const x2 = x * cosY + z1 * sinY;
+                const z2 = -x * sinY + z1 * cosY;
+                
+                // 绕Z轴旋转
+                const cosZ = Math.cos(this.rotation.z);
+                const sinZ = Math.sin(this.rotation.z);
+                const x3 = x2 * cosZ - y1 * sinZ;
+                const y3 = x2 * sinZ + y1 * cosZ;
+                
+                return {x: x3, y: y3, z: z2};
+            }
+            
+            // 3D到2D投影
+            project(vertex) {
+                const rotated = this.rotateVertex(vertex);
+                
+                // 透视投影
+                const distance = this.camera.z;
+                const scale = 200;
+                const x2d = (rotated.x * scale) / (rotated.z + distance) + this.width / 2;
+                const y2d = (rotated.y * scale) / (rotated.z + distance) + this.height / 2;
+                
+                return {
+                    x: x2d,
+                    y: y2d,
+                    z: rotated.z,
+                    world: rotated
+                };
+            }
+            
+            // 计算光照强度
+            calculateLighting(normal) {
+                // 简单的漫反射光照
+                const lightDir = this.normalize(this.light);
+                const dotProduct = normal.x * lightDir.x + normal.y * lightDir.y + normal.z * lightDir.z;
+                return Math.max(0.2, Math.min(1, dotProduct * 0.8 + 0.2));
+            }
+            
+            // 计算三角形法向量
+            calculateNormal(v1, v2, v3) {
+                const edge1 = {
+                    x: v2.x - v1.x,
+                    y: v2.y - v1.y,
+                    z: v2.z - v1.z
+                };
+                
+                const edge2 = {
+                    x: v3.x - v1.x,
+                    y: v3.y - v1.y,
+                    z: v3.z - v1.z
+                };
+                
+                // 叉积
+                const normal = {
+                    x: edge1.y * edge2.z - edge1.z * edge2.y,
+                    y: edge1.z * edge2.x - edge1.x * edge2.z,
+                    z: edge1.x * edge2.y - edge1.y * edge2.x
+                };
+                
+                return this.normalize(normal);
+            }
+            
+            // 获取递归深度对应的颜色
+            getRecursionColor(recursion) {
+                const colors = [
+                    '#ff6b6b',  // 深度0 - 红色
+                    '#4ecdc4',  // 深度1 - 青色
+                    '#45b7d1',  // 深度2 - 蓝色
+                    '#96ceb4',  // 深度3 - 绿色
+                    '#feca57',  // 深度4 - 黄色
+                    '#ff9ff3'   // 深度5+ - 粉色
+                ];
+                return colors[Math.min(recursion, colors.length - 1)];
+            }
+            
+            // 渲染函数
+            render() {
+                this.ctx.clearRect(0, 0, this.width, this.height);
+                
+                // 排序三角形（从远到近）
+                const projectedTriangles = this.triangles.map(triangle => {
+                    const [i0, i1, i2] = triangle.vertices;
+                    const v0 = this.vertices[i0];
+                    const v1 = this.vertices[i1];
+                    const v2 = this.vertices[i2];
+                    
+                    const p0 = this.project(v0);
+                    const p1 = this.project(v1);
+                    const p2 = this.project(v2);
+                    
+                    const avgZ = (p0.z + p1.z + p2.z) / 3;
+                    
+                    return {
+                        triangle,
+                        projected: [p0, p1, p2],
+                        avgZ,
+                        normal: this.calculateNormal(v0, v1, v2)
+                    };
+                }).sort((a, b) => a.avgZ - b.avgZ);
+                
+                // 绘制三角形
+                for (const {triangle, projected, normal} of projectedTriangles) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(projected[0].x, projected[0].y);
+                    this.ctx.lineTo(projected[1].x, projected[1].y);
+                    this.ctx.lineTo(projected[2].x, projected[2].y);
+                    this.ctx.closePath();
+                    
+                    if (this.renderMode === 'solid') {
+                        // 实体模式 - 使用光照和颜色
+                        const lighting = this.calculateLighting(normal);
+                        const baseColor = this.getRecursionColor(triangle.recursion);
+                        
+                        this.ctx.fillStyle = this.adjustBrightness(baseColor, lighting);
+                        this.ctx.fill();
+                        
+                        this.ctx.strokeStyle = '#333';
+                        this.ctx.lineWidth = 0.5;
+                        this.ctx.stroke();
+                    } else {
+                        // 线框模式 - 使用递归深度颜色
+                        this.ctx.strokeStyle = this.getRecursionColor(triangle.recursion);
+                        this.ctx.lineWidth = 1;
+                        this.ctx.stroke();
+                    }
+                }
+            }
+            
+            // 调整颜色亮度
+            adjustBrightness(color, brightness) {
+                const hex = color.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                
+                const newR = Math.round(r * brightness);
+                const newG = Math.round(g * brightness);
+                const newB = Math.round(b * brightness);
+                
+                return `rgb(${newR}, ${newG}, ${newB})`;
+            }
+            
+            // 更新信息显示
+            updateInfo() {
+                document.getElementById('recursionLevel').textContent = this.recursionLevel;
+                document.getElementById('vertexCount').textContent = this.vertices.length;
+                document.getElementById('triangleCount').textContent = this.triangles.length;
+            }
+            
+            // 动画循环
+            animate() {
+                this.rotation.y += 0.01;
+                this.rotation.x += 0.005;
+                
+                this.render();
+                requestAnimationFrame(() => this.animate());
+            }
+            
+            // 设置递归深度
+            setRecursionLevel(level) {
+                this.recursionLevel = Math.max(0, Math.min(5, level));
+                this.vertices = [];
+                this.triangles = [];
+                this.initializeTetrahedron();
+            }
+            
+            // 设置渲染模式
+            setRenderMode(mode) {
+                this.renderMode = mode;
+            }
+        }
+        
+        // 初始化
+        const canvas = document.getElementById('canvas');
+        const renderer = new SphereRenderer(canvas);
+        
+        // 按钮事件
+        document.getElementById('wireframeBtn').addEventListener('click', function() {
+            renderer.setRenderMode('wireframe');
+            document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+        
+        document.getElementById('solidBtn').addEventListener('click', function() {
+            renderer.setRenderMode('solid');
+            document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+        
+        document.getElementById('increaseRecursion').addEventListener('click', function() {
+            renderer.setRecursionLevel(renderer.recursionLevel + 1);
+        });
+        
+        document.getElementById('decreaseRecursion').addEventListener('click', function() {
+            renderer.setRecursionLevel(renderer.recursionLevel - 1);
+        });
+        
+        // 鼠标交互 - 拖动旋转
+        let isDragging = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        canvas.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+        
+        canvas.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                const deltaX = e.clientX - lastX;
+                const deltaY = e.clientY - lastY;
+                
+                renderer.rotation.y += deltaX * 0.01;
+                renderer.rotation.x += deltaY * 0.01;
+                
+                lastX = e.clientX;
+                lastY = e.clientY;
+            }
+        });
+        
+        canvas.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('mouseleave', function() {
+            isDragging = false;
+        });
+    </script>
+</body>
+</html>
